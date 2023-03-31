@@ -65,16 +65,24 @@ class InMayaSettings(BaseSettingsWidget):
         super(InMayaSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Maya options')
         self.mayaFileInput = Widgets.CueLabelLineEdit('Maya File:', filename)
+        self.fileFilters = ['Maya Ascii file (*.ma)',
+                            'Maya Binary file (*.mb)',
+                            'Maya file (*.ma *.mb)']
         self.cameraSelector = Widgets.CueSelectPulldown('Render Cameras', options=cameras)
         self.selectorLayout = QtWidgets.QHBoxLayout()
         self.setupUi()
+        self.setupConnections()
 
     def setupUi(self):
         """Creates the Maya-specific widget layout."""
         self.groupLayout.addWidget(self.mayaFileInput)
         self.selectorLayout.addWidget(self.cameraSelector)
         self.selectorLayout.addSpacerItem(Widgets.CueSpacerItem(Widgets.SpacerTypes.HORIZONTAL))
-        self.mainLayout.addLayout(self.selectorLayout)
+
+    def setupConnections(self):
+        """Sets up widget signals."""
+        self.mayaFileInput.lineEdit.textChanged.connect(self.dataChanged.emit)  # pylint: disable=no-member
+        self.mayaFileInput.setFileBrowsable(fileFilter=self.fileFilters)
 
     def setCommandData(self, commandData):
         self.mayaFileInput.setText(commandData.get('mayaFile', ''))
@@ -93,8 +101,10 @@ class BaseMayaSettings(BaseSettingsWidget):
     # pylint: disable=keyword-arg-before-vararg,unused-argument
     def __init__(self, parent=None, *args, **kwargs):
         super(BaseMayaSettings, self).__init__(parent=parent)
-        self.groupBox.setTitle('Maya options')
         self.mayaFileInput = Widgets.CueLabelLineEdit('Maya File:')
+        self.fileFilters = ['Maya Ascii file (*.ma)',
+                            'Maya Binary file (*.mb)',
+                            'Maya file (*.ma *.mb)']
         self.setupUi()
         self.setupConnections()
 
@@ -105,6 +115,7 @@ class BaseMayaSettings(BaseSettingsWidget):
     def setupConnections(self):
         """Sets up widget signals."""
         self.mayaFileInput.lineEdit.textChanged.connect(self.dataChanged.emit)  # pylint: disable=no-member
+        self.mayaFileInput.setFileBrowsable(fileFilter=self.fileFilters)
 
     def setCommandData(self, commandData):
         self.mayaFileInput.setText(commandData.get('mayaFile', ''))
@@ -123,17 +134,23 @@ class InNukeSettings(BaseSettingsWidget):
         super(InNukeSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Nuke options')
         self.fileInput = Widgets.CueLabelLineEdit('Nuke File:', filename)
+        self.fileFilters = ['Nuke script file (*.nk)']
         self.writeNodeSelector = Widgets.CueSelectPulldown('Write Nodes:', emptyText='[All]',
                                                            options=writeNodes)
         self.selectorLayout = QtWidgets.QHBoxLayout()
         self.setupUi()
+        self.setupConnections()
 
     def setupUi(self):
         """Creates the Nuke-specific widget layout."""
         self.groupLayout.addWidget(self.fileInput)
         self.selectorLayout.addWidget(self.writeNodeSelector)
         self.selectorLayout.addSpacerItem(Widgets.CueSpacerItem(Widgets.SpacerTypes.HORIZONTAL))
-        self.mainLayout.addLayout(self.selectorLayout)
+
+    def setupConnections(self):
+        """Sets up widget signals."""
+        self.fileInput.lineEdit.textChanged.connect(self.dataChanged.emit)  # pylint: disable=no-member
+        self.fileInput.setFileBrowsable(fileFilter=self.fileFilters)
 
     def setCommandData(self, commandData):
         self.fileInput.setText(commandData.get('nukeFile', ''))
@@ -154,6 +171,7 @@ class BaseNukeSettings(BaseSettingsWidget):
         super(BaseNukeSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Nuke options')
         self.fileInput = Widgets.CueLabelLineEdit('Nuke File:')
+        self.fileFilters = ['Nuke script file (*.nk)']
         self.setupUi()
         self.setupConnections()
 
@@ -164,6 +182,7 @@ class BaseNukeSettings(BaseSettingsWidget):
     def setupConnections(self):
         """Sets up widget signals."""
         self.fileInput.lineEdit.textChanged.connect(self.dataChanged.emit)  # pylint: disable=no-member
+        self.fileInput.setFileBrowsable(fileFilter=self.fileFilters)
 
     def setCommandData(self, commandData):
         self.fileInput.setText(commandData.get('nukeFile', ''))
@@ -208,6 +227,7 @@ class BaseBlenderSettings(BaseSettingsWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(BaseBlenderSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Blender options')
+        self.fileFilters = ['Blender file (*.blend)']
         self.fileInput = Widgets.CueLabelLineEdit('Blender File:')
         self.outputPath = Widgets.CueLabelLineEdit(
             'Output Path (Optional):',
@@ -232,6 +252,7 @@ class BaseBlenderSettings(BaseSettingsWidget):
         # pylint: disable=no-member
         self.fileInput.lineEdit.textChanged.connect(self.dataChanged.emit)
         self.outputPath.lineEdit.textChanged.connect(self.dataChanged.emit)
+        self.fileInput.setFileBrowsable(fileFilter=self.fileFilters)
         # pylint: enable=no-member
 
     def setCommandData(self, commandData):
