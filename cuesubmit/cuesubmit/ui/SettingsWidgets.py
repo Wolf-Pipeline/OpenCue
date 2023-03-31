@@ -78,6 +78,7 @@ class InMayaSettings(BaseSettingsWidget):
         self.groupLayout.addWidget(self.mayaFileInput)
         self.selectorLayout.addWidget(self.cameraSelector)
         self.selectorLayout.addSpacerItem(Widgets.CueSpacerItem(Widgets.SpacerTypes.HORIZONTAL))
+        self.mainLayout.addLayout(self.selectorLayout)
 
     def setupConnections(self):
         """Sets up widget signals."""
@@ -146,6 +147,7 @@ class InNukeSettings(BaseSettingsWidget):
         self.groupLayout.addWidget(self.fileInput)
         self.selectorLayout.addWidget(self.writeNodeSelector)
         self.selectorLayout.addSpacerItem(Widgets.CueSpacerItem(Widgets.SpacerTypes.HORIZONTAL))
+        self.mainLayout.addLayout(self.selectorLayout)
 
     def setupConnections(self):
         """Sets up widget signals."""
