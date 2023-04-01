@@ -221,6 +221,7 @@ class CueSelectPulldown(QtWidgets.QWidget):
         self.label = QtWidgets.QLabel(labelText)
         self.toolButton = QtWidgets.QToolButton(parent=self)
         self.optionsMenu = QtWidgets.QMenu(self)
+        self.optionsMenu.setStyleSheet(Style.PULLDOWN_LIST)
         self.setOptions(options)
         self.signals = [self.optionsMenu.triggered]
         self.getter = self.text
