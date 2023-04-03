@@ -1,9 +1,9 @@
 
 name = 'opencue'
 
-version = '0.22.1'
+version = '0.22.2'
 
-branch_path = "{root}/dev/cuesubmit/dev"
+branch_path = "{root}"  # Source code directory
 
 #variants = [['platform-linux']]
 
