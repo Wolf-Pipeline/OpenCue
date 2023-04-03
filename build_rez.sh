@@ -37,12 +37,11 @@ echo version: $VERSION
 echo
 
 install_package () {
-  # cp "$SRC_PATH/VERSION.in" "$SRC_PATH/$PKG/VERSION"
   PKG=$1
-  cd $SRC_PATH/$PKG
-  echo "python setup.py install $PKG"
-  cd $SRC_PATH
-  # rm "$SRC_PATH/$PKG/VERSION"
+  VERSION_FILE="$SRC_PATH/$PKG/VERSION"
+  echo $VERSION > "$VERSION_FILE"
+  rez-pip --install $SRC_PATH/$PKG --prefix $INSTALL_PATH --extra  --no-deps
+  rm "$VERSION_FILE"
 }
 
 
