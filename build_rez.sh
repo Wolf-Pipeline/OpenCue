@@ -2,7 +2,6 @@
 HERE=`pwd`
 # Get arguments from build_command (see package.py)
 SRC_PATH=${1}
-# BUILD_TMP_PATH=realpath ${2:-build}
 REQUESTED_INSTALL_PATH=${2}
 VERSION=${3}
 MODULES="${@:4}"
@@ -17,9 +16,8 @@ cd $HERE
 
 # Where to install opencue libraries
 INSTALL_PATH="${REQUESTED_INSTALL_PATH%%"$VERSION"*}../"
-
-mkdir -p $REQUESTED_INSTALL_PATH
-cd $REQUESTED_INSTALL_PATH
+mkdir -p $INSTALL_PATH
+cd $INSTALL_PATH
 INSTALL_PATH="`pwd`"
 cd $HERE
 
