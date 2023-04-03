@@ -44,14 +44,9 @@ install_package () {
   rm "$VERSION_FILE"
 }
 
-
 # Install packages dependencies
-echo "
-  pip install -r requirements.txt
-  pip install -r requirements_gui.txt
-  "
-
-install_package "pycue"
+rez-pip --install "$SRC_PATH/requirements.txt" --release --prefix "$LIB_PATH" --extra --requirement
+rez-pip --install "$SRC_PATH/requirements_gui.txt" --release --prefix "$LIB_PATH" --extra --requirement
 
 # When installing RQD
 if [[ " ${MODULES[*]} " =~ " rqd " ]];  then
