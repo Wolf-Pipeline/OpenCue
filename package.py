@@ -12,18 +12,23 @@ build_command = f"bash {{root}}/build_rez.sh {branch_path} {{install_path}} {{ve
 
 @early()
 def requires():
-    base_requires = [        
-        '2to3',
-        'future',
-        'grpcio',
-        'grpcio_tools',
-        'mock',
-        'packaging',
-        'psutil',
-        'pyfakefs',
-        'pynput',
-        'PyYAML',
-        'six',
+    build_requires = [
+        '2to3-1.0',
+        'grpcio-1.47.0',
+        'grpcio_tools-1.47.0',
+    ]
+    base_requires = [
+        '2to3-1.0',
+        'future-0.18.3',
+        'grpcio-1.47.0',
+        'grpcio_tools-1.47.0',
+        'mock-2.0.0',
+        'packaging-20.9',
+        'psutil-5.6.7',
+        'pyfakefs-3.6',
+        'pynput-1.7.6',
+        'PyYAML-5.1',
+        'six-1.11.0',
         'python_xlib'
         ]
     tools_requires = [
@@ -35,11 +40,11 @@ def requires():
         'rqd'
         ]
     gui_requires = [
-        'PySide2',
-        'QtPy',
+        'PySide2-5.15.2.1',
+        'QtPy-2.3.0',
         ]
     if building:
-        return []
+        return build_requires
     else:
         return base_requires + tools_requires + gui_requires
 
