@@ -31,6 +31,7 @@ fi
 echo
 echo src: $SRC_PATH
 echo tgt: $INSTALL_PATH
+echo rqst: $REQUESTED_INSTALL_PATH
 echo libs: $LIB_PATH
 echo modules: $MODULES
 echo version: $VERSION
