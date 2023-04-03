@@ -64,6 +64,7 @@ if [  ! "$MODULES" = "rqd" ];  then
 fi
 
 cd $INSTALL_PATH
+install_package "pycue"
 # Finally install each package
 for pkg in "${PACKAGES[@]}"; do
   if [[ ! " ${MODULES[*]} " =~ " $pkg " ]];  then
