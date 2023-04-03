@@ -51,24 +51,16 @@ rez-pip --install "$SRC_PATH/requirements_gui.txt" --release --prefix "$LIB_PATH
 
 # When installing RQD
 if [[ " ${MODULES[*]} " =~ " rqd " ]];  then
-  echo "
   # Build rqd's grpc protocol files and convert them to python3
-  cd $SRC_PATH/proto
-  python -m grpc_tools.protoc --proto_path=. --python_out=../rqd/rqd/compiled_proto --grpc_python_out=../rqd/rqd/compiled_proto ./*.proto
-  cd $SRC_PATH/rqd/rqd/compiled_proto/
-  2to3 -wn -f import ./*_pb2*.py
-  "
+  python -m grpc_tools.protoc --proto_path=$SRC_PATH/proto --python_out=$SRC_PATH/rqd/rqd/compiled_proto --grpc_python_out=$SRC_PATH/rqd/rqd/compiled_proto $SRC_PATH/proto/*.proto
+  2to3 -wn -f import $SRC_PATH/rqd/rqd/compiled_proto/*_pb2*.py
 fi
 
 # When installing any module
 if [  ! "$MODULES" = "rqd" ];  then
-  echo "
   # Build pycue's grpc protocol files and convert them to python3
-  cd $SRC_PATH/proto
-  python -m grpc_tools.protoc --proto_path=. --python_out=../pycue/opencue/compiled_proto --grpc_python_out=../pycue/opencue/compiled_proto ./*.proto
-  cd $SRC_PATH/pycue/opencue/compiled_proto/
-  2to3 -wn -f import ./*_pb2*.py
-  "
+  python -m grpc_tools.protoc --proto_path=$SRC_PATH/proto --python_out=$SRC_PATH/pycue/opencue/compiled_proto --grpc_python_out=$SRC_PATH/pycue/opencue/compiled_proto $SRC_PATH/proto/*.proto
+  2to3 -wn -f import $SRC_PATH/pycue/opencue/compiled_proto//*_pb2*.py
 fi
 
 cd $INSTALL_PATH
