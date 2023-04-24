@@ -65,9 +65,7 @@ class InMayaSettings(BaseSettingsWidget):
         super(InMayaSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Maya options')
         self.mayaFileInput = Widgets.CueLabelLineEdit('Maya File:', filename)
-        self.fileFilters = ['Maya Ascii file (*.ma)',
-                            'Maya Binary file (*.mb)',
-                            'Maya file (*.ma *.mb)']
+        self.fileFilters = Constants.MAYA_FILE_FILTERS
         self.cameraSelector = Widgets.CueSelectPulldown('Render Cameras', options=cameras)
         self.selectorLayout = QtWidgets.QHBoxLayout()
         self.setupUi()
@@ -103,9 +101,7 @@ class BaseMayaSettings(BaseSettingsWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(BaseMayaSettings, self).__init__(parent=parent)
         self.mayaFileInput = Widgets.CueLabelLineEdit('Maya File:')
-        self.fileFilters = ['Maya Ascii file (*.ma)',
-                            'Maya Binary file (*.mb)',
-                            'Maya file (*.ma *.mb)']
+        self.fileFilters = Constants.MAYA_FILE_FILTERS
         self.setupUi()
         self.setupConnections()
 
@@ -135,7 +131,7 @@ class InNukeSettings(BaseSettingsWidget):
         super(InNukeSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Nuke options')
         self.fileInput = Widgets.CueLabelLineEdit('Nuke File:', filename)
-        self.fileFilters = ['Nuke script file (*.nk)']
+        self.fileFilters = Constants.NUKE_FILE_FILTERS
         self.writeNodeSelector = Widgets.CueSelectPulldown('Write Nodes:', emptyText='[All]',
                                                            options=writeNodes)
         self.selectorLayout = QtWidgets.QHBoxLayout()
@@ -173,7 +169,7 @@ class BaseNukeSettings(BaseSettingsWidget):
         super(BaseNukeSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Nuke options')
         self.fileInput = Widgets.CueLabelLineEdit('Nuke File:')
-        self.fileFilters = ['Nuke script file (*.nk)']
+        self.fileFilters = Constants.NUKE_FILE_FILTERS
         self.setupUi()
         self.setupConnections()
 
@@ -229,7 +225,7 @@ class BaseBlenderSettings(BaseSettingsWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(BaseBlenderSettings, self).__init__(parent=parent)
         self.groupBox.setTitle('Blender options')
-        self.fileFilters = ['Blender file (*.blend)']
+        self.fileFilters = Constants.BLENDER_FILE_FILTERS
         self.fileInput = Widgets.CueLabelLineEdit('Blender File:')
         self.outputPath = Widgets.CueLabelLineEdit(
             'Output Path (Optional):',
