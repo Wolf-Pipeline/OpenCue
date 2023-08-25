@@ -75,6 +75,7 @@ RQD_HOST_ENV_VARS = []
 RQD_BECOME_JOB_USER = True
 RQD_CREATE_USER_IF_NOT_EXISTS = True
 RQD_TAGS = ''
+RQD_PREPEND_TIMESTAMP = False
 
 KILL_SIGNAL = 9
 if platform.system() == 'Linux':
@@ -214,6 +215,8 @@ try:
             CHECK_INTERVAL_LOCKED = config.getint(__override_section, "CHECK_INTERVAL_LOCKED")
         if config.has_option(__override_section, "MINIMUM_IDLE"):
             MINIMUM_IDLE = config.getint(__override_section, "MINIMUM_IDLE")
+        if config.has_option(__override_section, "RQD_PREPEND_TIMESTAMP"):
+            RQD_PREPEND_TIMESTAMP = config.getboolean(__override_section, "RQD_PREPEND_TIMESTAMP")
 
         if config.has_section(__host_env_var_section):
             RQD_HOST_ENV_VARS = config.options(__host_env_var_section)
