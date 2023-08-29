@@ -22,6 +22,7 @@ from __future__ import division
 
 from builtins import str
 from builtins import object
+import asyncio
 import datetime
 import logging
 import os
@@ -34,6 +35,7 @@ import tempfile
 import threading
 import time
 import traceback
+from dataclasses import dataclass
 
 import rqd.compiled_proto.host_pb2
 import rqd.compiled_proto.report_pb2
@@ -598,6 +600,14 @@ class FrameAttendantThread(threading.Thread):
                      self.runFrame.frame_id)
 
 
+@dataclass
+class NimbyState:
+    DEFAULT_STATE: str = "undefined"
+    ERROR_STATE: str = "error"
+    AVAILABLE_STATE: str = "available"
+    DISABLED_STATE: str = "disabled"
+    WORKING_STATE: str = "working"
+
 class RqCore(object):
     """Main body of RQD, handles the integration of all components,
        the setup and launching of a frame and acts on all gRPC calls
@@ -669,6 +679,25 @@ class RqCore(object):
         self.onIntervalThread.start()
 
         log.warning('RQD Started')
+
+    
+    def send_state_to_tray(self, state: str, message: str):
+        asyncio.run(self._send_state_to_tray(state, message))
+    async def _send_state_to_tray(self, state: str, message: str):
+        try:
+            reader, writer = await asyncio.open_connection('127.0.0.1', 1546)
+        except ConnectionRefusedError as error:
+            log.error("Could not send state to tray")
+            return
+        writer.write((state, message).encode())
+        await writer.drain()
+
+        data = await reader.read(100)
+        response = data.decode()
+        log.info("Received confirmation from tray: {}".format(response))
+
+        writer.close()
+        await writer.wait_closed()
 
     def onInterval(self, sleepTime=None):
 
@@ -877,36 +906,43 @@ class RqCore(object):
         if self.machine.state != rqd.compiled_proto.host_pb2.UP:
             err = "Not launching, rqd HardwareState is not Up"
             log.info(err)
+            self.send_state_to_tray(NimbyState.ERROR_STATE, err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
         if self.__whenIdle:
             err = "Not launching, rqd is waiting for idle to shutdown"
             log.info(err)
+            self.send_state_to_tray(NimbyState.DISABLED_STATE, err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
         if self.nimby.locked and not runFrame.ignore_nimby:
             err = "Not launching, rqd is lockNimby and not Ignore Nimby"
             log.info(err)
+            self.send_state_to_tray(NimbyState.DISABLED_STATE, err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
         if rqd.rqconstants.OVERRIDE_NIMBY and self.nimby.isNimbyActive():
             err = "Not launching, rqd is lockNimby and User is Active"
             log.info(err)
+            self.send_state_to_tray(NimbyState.DISABLED_STATE, err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
         if runFrame.frame_id in self.__cache:
             err = "Not launching, frame is already running on this proc %s" % runFrame.frame_id
             log.critical(err)
+            self.send_state_to_tray(NimbyState.WORKING_STATE, err)
             raise rqd.rqexceptions.DuplicateFrameViolationException(err)
 
         if runFrame.HasField("uid") and runFrame.uid <= 0:
             err = "Not launching, will not run frame as uid=%d" % runFrame.uid
             log.warning(err)
+            self.send_state_to_tray(NimbyState.ERROR_STATE, err)
             raise rqd.rqexceptions.InvalidUserException(err)
 
         if runFrame.num_cores <= 0:
             err = "Not launching, numCores must be > 0"
             log.warning(err)
+            self.send_state_to_tray(NimbyState.ERROR_STATE, err)
             raise rqd.rqexceptions.CoreReservationFailureException(err)
 
         # See if all requested cores are available
@@ -916,6 +952,7 @@ class RqCore(object):
             if self.cores.idle_cores < runFrame.num_cores:
                 err = "Not launching, insufficient idle cores"
                 log.critical(err)
+                self.send_state_to_tray(NimbyState.WORKING_STATE, err)
                 raise rqd.rqexceptions.CoreReservationFailureException(err)
             # pylint: enable=no-member
 
@@ -940,6 +977,9 @@ class RqCore(object):
         runningFrame = rqd.rqnetwork.RunningFrame(self, runFrame)
         runningFrame.frameAttendantThread = FrameAttendantThread(self, runFrame, runningFrame)
         runningFrame.frameAttendantThread.start()
+        frameInfos = runningFrame.status()
+        tray_msg = "Working on {} with {} cores".format(frameInfos.frame_name, frameInfos.num_cores)
+        self.send_state_to_tray(NimbyState.WORKING_STATE, tray_msg)
 
     def getRunningFrame(self, frameId):
         """Gets the currently running frame."""
@@ -1090,6 +1130,7 @@ class RqCore(object):
             self.__threadLock.release()
 
         log.debug(self.cores)
+        self.send_state_to_tray(NimbyState.DISABLED_STATE, "Host disabled")
 
         if sendUpdate:
             self.sendStatusReport()
@@ -1158,6 +1199,7 @@ class RqCore(object):
             self.__threadLock.release()
 
         log.debug(self.cores)
+        self.send_state_to_tray(NimbyState.AVAILABLE_STATE, "Host Available")
 
         if sendUpdate:
             self.sendStatusReport()
