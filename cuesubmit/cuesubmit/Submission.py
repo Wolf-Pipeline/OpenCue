@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 from builtins import str
 
+import os
+
 import outline
 import outline.cuerun
 import outline.modules.shell
@@ -95,6 +97,14 @@ def buildLayer(layerData, command, lastLayer=None):
         layer.set_service(layerData.services[0])
     if layerData.limits:
         layer.set_limits(layerData.limits)
+    tags = []
+    if layerData.myMachine:
+        hostname = os.environ.get('HOSTNAME')
+        tags = [hostname]
+        print('Setting hostname: ', hostname)
+    if tags:
+        print('Setting tags: ', tags)
+        layer.set_arg("tags", tags)
     if layerData.dependType and lastLayer:
         if layerData.dependType == 'Layer':
             layer.depend_all(lastLayer)
