@@ -41,7 +41,9 @@ class LayerData(object):
         self.cmd = {}
         self.layerRange = ''
         self.chunk = '1'
-        self.cores = '1'
+        self.myMachine = False
+        self.overrideCores = False
+        self.cores = '0'
         self.env = {}
         self.services = []
         self.limits = []
@@ -76,8 +78,9 @@ class LayerData(object):
                          dependType, dependsOn)
         return layerData
 
-    def update(self, name=None, layerType=None, cmd=None, layerRange=None, chunk=None, cores=None,
-               env=None, services=None, limits=None, dependType=None, dependsOn=None):
+    def update(self, name=None, layerType=None, cmd=None, layerRange=None, chunk=None,
+               cores=None, overrideCores=None, env=None, myMachine=None, services=None, limits=None,
+               dependType=None, dependsOn=None):
         """Update this Layer with the provided settings."""
         if name is not None:
             self.name = name
@@ -89,6 +92,10 @@ class LayerData(object):
             self.layerRange = layerRange
         if chunk is not None:
             self.chunk = chunk
+        if overrideCores is not None:
+            self.overrideCores = overrideCores
+        if myMachine is not None:
+            self.myMachine = myMachine
         if cores is not None:
             self.cores = cores
         if env is not None:
