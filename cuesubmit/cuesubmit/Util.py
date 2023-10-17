@@ -35,12 +35,6 @@ def getServices():
     """Returns a list of service names from cuebot."""
     return [service.name() for service in opencue.api.getDefaultServices()]
 
-def getServiceOption(serviceName, option):
-    """Returns the value for a service option from cuebot."""
-    _service = next(iter(service for service in opencue.api.getDefaultServices() if service.name() == serviceName))
-    if _service and hasattr(_service, option):
-        return getattr(_service, option)()
-    print(f'Failed to get option {option} from {_service.name()}')
 
 def getShows():
     """Returns a list of show names from cuebot."""
