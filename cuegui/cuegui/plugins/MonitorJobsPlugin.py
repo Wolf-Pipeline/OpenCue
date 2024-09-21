@@ -81,6 +81,9 @@ class MonitorJobsDockWidget(cuegui.AbstractDockWidget.AbstractDockWidget):
                                      ("jobs",
                                       self.getJobIds,
                                       self.restoreJobIds),
+                                     ("userColors",
+                                      self.jobMonitor.getUserColors,
+                                      self.jobMonitor.setUserColors),
                                      ("columnVisibility",
                                       self.jobMonitor.getColumnVisibility,
                                       self.jobMonitor.setColumnVisibility),
@@ -190,24 +193,26 @@ class MonitorJobsDockWidget(cuegui.AbstractDockWidget.AbstractDockWidget):
         self.__loadFinishedJobsCheckBox.stateChanged.connect(self._regexLoadJobsHandle)  # pylint: disable=no-member
 
     def _regexLoadJobsHandle(self):
-        """This will select all jobs that have a name that contain the substring
-        in self.__regexLoadJobsEditBox.text() and scroll to the first match"""
+        """This will select all jobs that have a name that contains the substring
+        in self.__regexLoadJobsEditBox.text() and scroll to the first match."""
         substring = str(self.__regexLoadJobsEditBox.text()).strip()
         load_finished_jobs = self.__loadFinishedJobsCheckBox.isChecked()
 
-        self.jobMonitor.removeAllItems()
+        # Only clear the existing jobs if SEARCH_JOBS_APPEND_RESULTS is False
+        if not cuegui.Constants.SEARCH_JOBS_APPEND_RESULTS:
+            self.jobMonitor.removeAllItems()
 
-        if cuegui.Utils.isStringId(substring):
-            # If a uuid is provided, load it
-            self.jobMonitor.addJob(substring)
-        elif load_finished_jobs or re.search(
+        if substring:
+            # Load job if a uuid is provided
+            if cuegui.Utils.isStringId(substring):
+                self.jobMonitor.addJob(substring)
+            # Load if show and shot are provided or if the "load finished" checkbox is checked
+            elif load_finished_jobs or re.search(
                 r"^([a-z0-9_]+)\-([a-z0-9\.]+)\-", substring, re.IGNORECASE):
-            # If show and shot is provided, or if "load finished" checkbox is checked, load all jobs
-            for job in opencue.api.getJobs(regex=[substring], include_finished=True):
-                self.jobMonitor.addJob(job)
-        else:
+                for job in opencue.api.getJobs(regex=[substring], include_finished=True):
+                    self.jobMonitor.addJob(job)
             # Otherwise, just load current matching jobs (except for the empty string)
-            if substring:
+            else:
                 for job in opencue.api.getJobs(regex=[substring]):
                     self.jobMonitor.addJob(job)
 
