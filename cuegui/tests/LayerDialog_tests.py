@@ -24,10 +24,10 @@ import qtpy.QtCore
 import qtpy.QtGui
 import qtpy.QtWidgets
 
-import opencue.compiled_proto.show_pb2
-import opencue.compiled_proto.filter_pb2
-import opencue.compiled_proto.job_pb2
-import opencue.compiled_proto.limit_pb2
+import opencue_proto.show_pb2
+import opencue_proto.filter_pb2
+import opencue_proto.job_pb2
+import opencue_proto.limit_pb2
 import opencue.wrappers.filter
 import opencue.wrappers.layer
 import opencue.wrappers.limit
@@ -53,14 +53,14 @@ class LayerPropertiesDialogTests(unittest.TestCase):
 
         self.layers = {
             'layer1Id': opencue.wrappers.layer.Layer(
-                opencue.compiled_proto.job_pb2.Layer(
+                opencue_proto.job_pb2.Layer(
                     id='layer1Id', name='layer1Name', range='1-5', tags=['tag1', 'tag2'],
                     min_cores=1, max_cores=3, is_threadable=False,
                     min_memory=2097152, min_gpu_memory=1,
                     chunk_size=1, timeout=30, timeout_llu=1, memory_optimizer_enabled=True,
                     limits=['limit1Name', 'limit2Name'])),
             'layer2Id': opencue.wrappers.layer.Layer(
-                opencue.compiled_proto.job_pb2.Layer(
+                opencue_proto.job_pb2.Layer(
                     id='layer2Id', name='layer2Name', range='2-22', tags=['tag2', 'tag3'],
                     min_cores=2, max_cores=2, is_threadable=True,
                     min_memory=6291456, min_gpu_memory=2,
@@ -71,13 +71,13 @@ class LayerPropertiesDialogTests(unittest.TestCase):
         get_layer_mock.side_effect = lambda layer_id: self.layers[layer_id]
         get_limits_mock.return_value = [
             opencue.wrappers.limit.Limit(
-                opencue.compiled_proto.limit_pb2.Limit(id='limit1Id', name='limit1Name')),
+                opencue_proto.limit_pb2.Limit(id='limit1Id', name='limit1Name')),
             opencue.wrappers.limit.Limit(
-                opencue.compiled_proto.limit_pb2.Limit(id='limit2Id', name='limit2Name')),
+                opencue_proto.limit_pb2.Limit(id='limit2Id', name='limit2Name')),
             opencue.wrappers.limit.Limit(
-                opencue.compiled_proto.limit_pb2.Limit(id='limit3Id', name='limit3Name')),
+                opencue_proto.limit_pb2.Limit(id='limit3Id', name='limit3Name')),
             opencue.wrappers.limit.Limit(
-                opencue.compiled_proto.limit_pb2.Limit(id='limit4Id', name='limit4Name')),
+                opencue_proto.limit_pb2.Limit(id='limit4Id', name='limit4Name')),
         ]
 
         self.parent_widget = qtpy.QtWidgets.QWidget()
@@ -88,14 +88,14 @@ class LayerPropertiesDialogTests(unittest.TestCase):
         default_config = cuegui.Utils.getResourceConfig()
 
         self.assertEqual(
-            int(self.layer_properties_dialog.mem_min_gb * 1024 * 1024),
+            int(self.layer_properties_dialog.mem_min_gb * 1024),
             self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.minimum())
         self.assertEqual(
-            default_config['max_memory'] * 1024 * 1024,
+            default_config['max_memory'] * 1024,
             self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.maximum())
         # Layer with the higher min_memory determines the initial value.
         self.assertEqual(
-            6291456, self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.value())
+            6144, self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.value())
 
         # Is memory optimizer is on for any layer, it shows as checked in the dialog.
         self.assertTrue(self.layer_properties_dialog._LayerPropertiesDialog__mem_opt.isChecked())
@@ -156,12 +156,12 @@ class LayerPropertiesDialogTests(unittest.TestCase):
 
     def test__should_fail_on_memory_too_high(self):
         self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.setValue(
-            self.layer_properties_dialog.mem_max_kb * 2)
+            self.layer_properties_dialog.mem_max_mb * 2)
         self.assertFalse(self.layer_properties_dialog.verify())
 
     def test__should_fail_on_memory_too_low(self):
         self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.setValue(
-            self.layer_properties_dialog.mem_min_kb / 3)
+            self.layer_properties_dialog.mem_min_mb / 3)
         self.assertFalse(self.layer_properties_dialog.verify())
 
     def test__should_fail_on_gpu_too_high(self):
@@ -185,7 +185,7 @@ class LayerPropertiesDialogTests(unittest.TestCase):
         self.layer_properties_dialog._LayerPropertiesDialog__limits._LayerLimitsWidget__layers = [
             layer1_mock, layer2_mock]
 
-        new_mem_value = self.layer_properties_dialog.mem_max_kb
+        new_mem_value = self.layer_properties_dialog.mem_max_mb
         self.layer_properties_dialog._LayerPropertiesDialog__mem.parent().parent().enable(True)
         self.layer_properties_dialog._LayerPropertiesDialog__mem.slider.setValue(new_mem_value)
 
@@ -232,8 +232,8 @@ class LayerPropertiesDialogTests(unittest.TestCase):
             limits_to_enable=new_limits)
 
         self.layer_properties_dialog.apply()
-        layer1_mock.setMinMemory.assert_called_with(new_mem_value)
-        layer2_mock.setMinMemory.assert_called_with(new_mem_value)
+        layer1_mock.setMinMemory.assert_called_with(new_mem_value * 1024)
+        layer2_mock.setMinMemory.assert_called_with(new_mem_value * 1024)
         layer1_mock.enableMemoryOptimizer.assert_called_with(new_mem_opt_is_enabled)
         layer2_mock.enableMemoryOptimizer.assert_called_with(new_mem_opt_is_enabled)
         layer1_mock.setMinCores.assert_called_with(100 * new_min_cores)

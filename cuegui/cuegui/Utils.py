@@ -36,7 +36,8 @@ import yaml
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
-import six
+
+import FileSequence
 
 import opencue
 import opencue.wrappers.group
@@ -258,7 +259,7 @@ def findJob(job):
     @rtype:  job or None"""
     if isJob(job):
         return job
-    if not isinstance(job, six.string_types):
+    if not isinstance(job, str):
         return None
     if isStringId(job):
         if re.search("^Job.", job):
@@ -383,6 +384,15 @@ def dateToMMDDHHMM(sec):
     if sec == 0:
         return "--/-- --:--"
     return time.strftime("%m/%d %H:%M", time.localtime(sec))
+
+
+def dateToMMDDYYYYHHMM(sec):
+    """Returns date in the format %m/%d/%Y %H:%M
+    @rtype:  str
+    @return: Date in the format %m/%d/%Y %H:%M"""
+    if sec == 0:
+        return "--/-- --:--"
+    return time.strftime("%m/%d/%Y %H:%M", time.localtime(sec))
 
 
 def memoryToString(kmem, unit=None):
@@ -543,11 +553,13 @@ def popupFrameXdiff(job, frame1, frame2, frame3 = None):
 # View output in viewer
 ################################################################################
 
-def viewOutput(items):
+def viewOutput(items, actionText):
     """Views the output of a list of jobs or list of layers in viewer
 
-    @type  items: list<Job> or list<Layer>
-    @param items: List of jobs or list of layers to view the entire job's outputs"""
+    @type       items: list<Job> or list<Layer>
+    @param      items: List of jobs or list of layers to view the entire job's outputs
+    @type  actionText: String
+    @param actionText: String to identity which viewer to use"""
     if items and len(items) >= 1:
         paths = []
 
@@ -563,27 +575,40 @@ def viewOutput(items):
             raise Exception("The function expects a list of jobs or a list of layers")
 
         # Launch viewer using paths if paths exists and are valid
-        launchViewerUsingPaths(paths)
+        launchViewerUsingPaths(paths, actionText)
 
 
-def viewFramesOutput(job, frames):
+def viewFramesOutput(job, frames, actionText):
     """Views the output of a list of frames in viewer using the job's layer
     associated with the frames
 
     @type  job: Job or None
     @param job: The job with the output to view.
     @type  frames: list<Frame>
-    @param frames: List of frames to view the entire job's outputs"""
+    @param frames: List of frames to view the entire job's outputs
+    @type  actionText: String
+    @param actionText: String to identity which viewer to use"""
+
     if frames and len(frames) >= 1:
         paths = []
 
-        all_layers = { layer.data.name: layer for layer in job.getLayers() }
+        all_layers = { layer.name(): layer for layer in job.getLayers() }
         for frame in frames:
-            paths.extend(__getOutputFromFrame(all_layers[frame.data.layer_name], frame))
-        launchViewerUsingPaths(paths)
+            paths.extend(getOutputFromFrame(all_layers[frame.layer()], frame))
+        launchViewerUsingPaths(paths, actionText)
 
+def getViewer(actionText):
+    """Retrieves the viewer from cuegui.Constants.OUTPUT_VIEWERS using the actionText
 
-def launchViewerUsingPaths(paths, test_mode=False):
+    @type  actionText: String
+    @param actionText: String to identity which viewer to use"""
+
+    for viewer in cuegui.Constants.OUTPUT_VIEWERS:
+        if viewer['action_text'] == actionText:
+            return viewer
+    return None
+
+def launchViewerUsingPaths(paths, actionText, test_mode=False):
     """Launch viewer using paths if paths exists and are valid
     This function relies on the following constants that should be configured on the output_viewer
     section of the config file:
@@ -591,7 +616,10 @@ def launchViewerUsingPaths(paths, test_mode=False):
         - OUTPUT_VIEWER_EXTRACT_ARGS_REGEX
         - OUTPUT_VIEWER_CMD_PATTERN
     @type  paths: list<String>
-    @param paths: List of paths"""
+    @param paths: List of paths
+    @type  actionText: String
+    @param actionText: String to identity which viewer to use"""
+    viewer = getViewer(actionText)
     if not paths:
         if not test_mode:
             showErrorMessageBox(
@@ -603,8 +631,8 @@ def launchViewerUsingPaths(paths, test_mode=False):
     # Stereo ouputs are usually differentiated by a modifier like _lf_ and _rt_,
     # the viewer should only be called with one of them if OUTPUT_VIEWER_STEREO_MODIFIERS
     # is set.
-    if cuegui.Constants.OUTPUT_VIEWER_STEREO_MODIFIERS:
-        stereo_modifiers = cuegui.Constants.OUTPUT_VIEWER_STEREO_MODIFIERS.split(",")
+    if 'stereo_modifiers' in viewer:
+        stereo_modifiers = viewer['stereo_modifiers'].split(",")
         if len(paths) == 2 and len(stereo_modifiers) == 2:
             unified_paths = [path.replace(stereo_modifiers[0].strip(),
                                         stereo_modifiers[1].strip())
@@ -617,8 +645,8 @@ def launchViewerUsingPaths(paths, test_mode=False):
     # should be the same as the quantity expected by cmd_pattern.
     # If no regex is provided, cmd_pattern is executed as it is
     sample_path = paths[0]
-    regexp = cuegui.Constants.OUTPUT_VIEWER_EXTRACT_ARGS_REGEX
-    cmd_pattern = cuegui.Constants.OUTPUT_VIEWER_CMD_PATTERN
+    regexp = viewer.get('extract_args_regex')
+    cmd_pattern = viewer.get('cmd_pattern')
     joined_paths = " ".join(paths)
 
     # Default to the cmd + paths
@@ -646,7 +674,8 @@ def launchViewerUsingPaths(paths, test_mode=False):
     if not test_mode:
         print(msg)
         try:
-            subprocess.check_call(cmd.split())
+            # pylint: disable=consider-using-with
+            subprocess.Popen(cmd.split())
         except subprocess.CalledProcessError as e:
             showErrorMessageBox(str(e), title='Error running Viewer command')
         except Exception as e:
@@ -697,7 +726,7 @@ def __getOutputFromLayers(layers):
     return paths
 
 
-def __getOutputFromFrame(layer, frame):
+def getOutputFromFrame(layer, frame):
     """Returns the output paths from a single frame
 
     @type  layer: Layer
@@ -710,9 +739,8 @@ def __getOutputFromFrame(layer, frame):
         outputs = layer.getOutputPaths()
         if not outputs:
             return []
-        main_output = __findMainOutputPath(outputs)
-        main_output = main_output.replace("#", "%04d" % frame.data.number)
-        return [main_output]
+        seq = FileSequence.FileSequence(__findMainOutputPath(outputs))
+        return seq.getFileList(frameSet=FileSequence.FrameSet(str(frame.number())))
     except IndexError:
         return []
 

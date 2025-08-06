@@ -21,12 +21,13 @@ from __future__ import division
 from __future__ import absolute_import
 import getpass
 import os
+import platform
 import unittest
 
 import mock
 
-from opencue.compiled_proto import depend_pb2
-from opencue.compiled_proto import job_pb2
+from opencue_proto import depend_pb2
+from opencue_proto import job_pb2
 import opencue.wrappers.frame
 import opencue.wrappers.layer
 import opencue.wrappers.job
@@ -49,7 +50,7 @@ class LayerTests(unittest.TestCase):
             job_pb2.Layer(name=TEST_LAYER_NAME))
         username = getpass.getuser()
         pid = os.getpid()
-        host_kill = os.uname()[1]
+        host_kill = platform.uname()[1]
         reason = "Frames Kill Request"
         layer.kill(username=username, pid=pid, host_kill=host_kill, reason=reason)
 
@@ -413,11 +414,11 @@ class LayerTests(unittest.TestCase):
 class LayerEnumTests(unittest.TestCase):
 
     def testLayerType(self):
-        self.assertEqual(opencue.api.Layer.LayerType.PRE, opencue.compiled_proto.job_pb2.PRE)
+        self.assertEqual(opencue.api.Layer.LayerType.PRE, job_pb2.PRE)
         self.assertEqual(opencue.api.Layer.LayerType.PRE, 0)
 
     def testOrder(self):
-        self.assertEqual(opencue.api.Layer.Order.LAST, opencue.compiled_proto.job_pb2.LAST)
+        self.assertEqual(opencue.api.Layer.Order.LAST, job_pb2.LAST)
         self.assertEqual(opencue.api.Layer.Order.LAST, 1)
 
 

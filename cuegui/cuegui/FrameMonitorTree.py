@@ -24,6 +24,7 @@ from builtins import str
 from builtins import map
 from builtins import object
 import datetime
+import functools
 import glob
 import os
 import re
@@ -34,7 +35,7 @@ from qtpy import QtGui
 from qtpy import QtWidgets
 
 import opencue
-from opencue.compiled_proto import job_pb2
+from opencue_proto import job_pb2
 
 import cuegui.AbstractTreeWidget
 import cuegui.AbstractWidgetItem
@@ -358,6 +359,7 @@ class FrameMonitorTree(cuegui.AbstractTreeWidget.AbstractTreeWidget):
             old_log_files = []
 
         self.app.display_log_file_content.emit([current_log_file] + old_log_files)
+        self.app.select_frame.emit(self.__job, item.rpcObject)
 
     def __itemDoubleClickedViewLog(self, item, col):
         """Called when a frame is double clicked, views the frame log in a popup
@@ -690,7 +692,7 @@ class FrameWidgetItem(cuegui.AbstractWidgetItem.AbstractWidgetItem):
 class FrameLogDataBuffer(object):
     """A cached and threaded interface to reading the last log line"""
     maxCacheTime = 5
-    maxThreads = 2
+    maxThreads = 5
     maxQueue = 500
 
     # Position of data from getLastLineData
@@ -802,7 +804,7 @@ class FrameEtaDataBuffer(object):
     """A cached and threaded interface to reading the last log line"""
 
     maxCacheTime = 60
-    maxThreads = 2
+    maxThreads = 5
     maxQueue = 501
 
     def __init__(self):
@@ -899,6 +901,7 @@ class FrameContextMenu(QtWidgets.QMenu):
 
         self.__menuActions.frames().addAction(self, "tail")
         self.__menuActions.frames().addAction(self, "view")
+        self.__menuActions.frames().addAction(self, "copyLogPath")
 
         if count == 1:
             if widget.selectedObjects()[0].data.retry_count >= 1:
@@ -909,11 +912,33 @@ class FrameContextMenu(QtWidgets.QMenu):
         elif count == 2:
             self.__menuActions.frames().addAction(self, "xdiff2")
 
-        if bool(int(self.app.settings.value("AllowDeeding", 0))):
+        if int(self.app.settings.value("DisableDeeding", 0)) == 0:
             self.__menuActions.frames().addAction(self, "useLocalCores")
 
-        if cuegui.Constants.OUTPUT_VIEWER_CMD_PATTERN:
-            self.__menuActions.frames().addAction(self, "viewOutput")
+        if cuegui.Constants.OUTPUT_VIEWERS:
+            job = widget.getJob()
+            if job is not None:
+                outputPaths = []
+                selectedFrames = widget.selectedObjects()
+
+                layers_dict = {layer.name(): layer for layer in job.getLayers()}
+
+                for frame in selectedFrames:
+                    layer_name = frame.layer()
+                    layer = layers_dict.get(layer_name)
+                    if layer:
+                        outputPaths.extend(cuegui.Utils.getOutputFromFrame(layer, frame))
+
+                if outputPaths:
+                    for viewer in cuegui.Constants.OUTPUT_VIEWERS:
+                        action = QtWidgets.QAction(QtGui.QIcon(":viewoutput.png"),
+                                                   viewer['action_text'], self)
+                        action.triggered.connect(
+                            functools.partial(cuegui.Utils.viewFramesOutput,
+                                            job,
+                                            selectedFrames,
+                                            viewer['action_text']))
+                        self.addAction(action)
 
         if self.app.applicationName() == "CueCommander":
             self.__menuActions.frames().addAction(self, "viewHost")

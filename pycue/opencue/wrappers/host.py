@@ -20,14 +20,15 @@ import time
 from builtins import input
 import grpc
 
+from opencue_proto import comment_pb2
+from opencue_proto import host_pb2
 from opencue import Cuebot
 from opencue import util
 from opencue import search
-from opencue.compiled_proto import comment_pb2
-from opencue.compiled_proto import host_pb2
 import opencue.wrappers.comment
 # pylint: disable=cyclic-import
 import opencue.wrappers.proc
+import opencue.wrappers.render_partition
 
 
 class Host(object):
@@ -109,8 +110,8 @@ class Host(object):
         """
         response = self.stub.GetRenderPartitions(host_pb2.HostGetRenderPartitionsRequest(
             host=self.data), timeout=Cuebot.Timeout)
-        partitionSeq = response.render_partitions
-        return partitionSeq.render_partitions
+        return [opencue.wrappers.render_partition.RenderPartition(p)
+            for p in response.render_partitions.render_partitions]
 
     def rebootWhenIdle(self):
         """Sets the machine to reboot once idle.

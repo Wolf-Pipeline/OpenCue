@@ -21,13 +21,14 @@ from __future__ import division
 from __future__ import absolute_import
 import getpass
 import os
+import platform
 import unittest
 
 import mock
 
-from opencue.compiled_proto import comment_pb2
-from opencue.compiled_proto import depend_pb2
-from opencue.compiled_proto import job_pb2
+from opencue_proto import comment_pb2
+from opencue_proto import depend_pb2
+from opencue_proto import job_pb2
 import opencue.wrappers.frame
 import opencue.wrappers.group
 import opencue.wrappers.job
@@ -49,7 +50,7 @@ class JobTests(unittest.TestCase):
             job_pb2.Job(name=TEST_JOB_NAME))
         username = getpass.getuser()
         pid = os.getpid()
-        host_kill = os.uname()[1]
+        host_kill = platform.uname()[1]
         reason = "Job Kill Request"
         job.kill(username=username, pid=pid, host_kill=host_kill, reason=reason)
 
@@ -95,7 +96,7 @@ class JobTests(unittest.TestCase):
             job_pb2.Job(name=TEST_JOB_NAME))
         username = getpass.getuser()
         pid = os.getpid()
-        host_kill = os.uname()[1]
+        host_kill = platform.uname()[1]
         reason = "Job Kill Request"
         job.killFrames(range=frameRange,
                        username=username,
@@ -555,7 +556,7 @@ class NestedJobTests(unittest.TestCase):
 class JobEnumTests(unittest.TestCase):
 
     def testJobState(self):
-        self.assertEqual(opencue.api.Job.JobState.PENDING, opencue.compiled_proto.job_pb2.PENDING)
+        self.assertEqual(opencue.api.Job.JobState.PENDING, job_pb2.PENDING)
         self.assertEqual(opencue.api.Job.JobState.PENDING, 0)
 
 
